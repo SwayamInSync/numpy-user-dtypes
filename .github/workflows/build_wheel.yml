@@ -3,7 +3,7 @@ name: Build Wheels
 on:
   push:
     branches:
-      - quaddtype-packaging
+      - ci-refactor
     tags:
       - 'v*'
   pull_request:
