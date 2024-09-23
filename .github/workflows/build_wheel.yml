@@ -3,9 +3,9 @@ name: Build Wheels
 on:
   push:
     branches:
-      - main
+      - package-fix
     tags:
-      - "v*"
+      - 'v*'
   pull_request:
 
 jobs:
@@ -18,16 +18,16 @@ jobs:
       - name: Set up Python
         uses: actions/setup-python@v4
         with:
-          python-version: ">=3.10.0"
+          python-version: '>=3.10.0'
 
       - name: Install cibuildwheel
         run: pip install cibuildwheel==2.20.0
 
       - name: Build wheels
         env:
-          CIBW_BUILD: "cp310-manylinux_x86_64 cp311-manylinux_x86_64 cp312-manylinux_x86_64"
+          CIBW_BUILD: 'cp310-manylinux_x86_64 cp311-manylinux_x86_64 cp312-manylinux_x86_64'
           CIBW_MANYLINUX_X86_64_IMAGE: manylinux_2_28
-          CIBW_BUILD_VERBOSITY: "3"
+          CIBW_BUILD_VERBOSITY: '3'
           CIBW_BEFORE_ALL: |
             yum install -y wget
             wget https://repo.anaconda.com/miniconda/Miniconda3-latest-Linux-x86_64.sh -O miniconda.sh
@@ -57,7 +57,7 @@ jobs:
             python -c "import quaddtype; print('quaddtype imported successfully')"
             pip install {package}[test]
             pytest {project}/tests
-          CIBW_TEST_EXTRAS: "test"
+          CIBW_TEST_EXTRAS: 'test'
         run: |
           python -m cibuildwheel --output-dir wheelhouse
         working-directory: ./quaddtype
@@ -80,13 +80,13 @@ jobs:
       - name: Set up Python
         uses: actions/setup-python@v4
         with:
-          python-version: ">=3.10.0"
+          python-version: '>=3.10.0'
 
       - name: Setup Miniconda
         uses: conda-incubator/setup-miniconda@v3
         with:
           auto-update-conda: true
-          python-version: "3.10"
+          python-version: '3.10'
           channels: conda-forge
 
       - name: Install SLEEF
@@ -101,9 +101,9 @@ jobs:
 
       - name: Build wheels
         env:
-          CIBW_BUILD_VERBOSITY: "1"
+          CIBW_BUILD_VERBOSITY: '1'
           CIBW_ARCHS_MACOS: ${{ matrix.os == 'macos-13' && 'x86_64' || 'arm64' }}
-          CIBW_SKIP: "pp* cp36-* cp37-* cp38-* cp39-* cp313-*"
+          CIBW_SKIP: 'pp* cp36-* cp37-* cp38-* cp39-* cp313-*'
           CIBW_ENVIRONMENT: >
             SLEEF_PATH="${{ env.SLEEF_PATH }}"
             DYLD_LIBRARY_PATH="${{ env.SLEEF_PATH }}/lib:$DYLD_LIBRARY_PATH"
@@ -112,7 +112,7 @@ jobs:
             CXXFLAGS="-I${{ env.SLEEF_PATH }}/include $CXXFLAGS"
             LDFLAGS="-L${{ env.SLEEF_PATH }}/lib $LDFLAGS"
             MACOSX_DEPLOYMENT_TARGET="10.13"
-          CIBW_REPAIR_WHEEL_COMMAND: "delocate-wheel -w {dest_dir} -v {wheel}"
+          CIBW_REPAIR_WHEEL_COMMAND: 'delocate-wheel -w {dest_dir} -v {wheel}'
           CIBW_TEST_COMMAND: |
             python -c "import os; print('SLEEF_PATH:', os.environ.get('SLEEF_PATH', 'Not set'))"
             python -c "import platform; print('Python version:', platform.python_version())"
@@ -120,7 +120,7 @@ jobs:
             python -c "import quaddtype; print('quaddtype imported successfully')"
             pip install {package}[test]
             pytest {project}/tests
-          CIBW_TEST_EXTRAS: "test"
+          CIBW_TEST_EXTRAS: 'test'
         run: |
           echo "SLEEF_PATH: $SLEEF_PATH"
           ls $SLEEF_PATH/include/sleef*
@@ -155,14 +155,14 @@ jobs:
       - name: Set up Python 3.10
         uses: actions/setup-python@v4
         with:
-          python-version: "3.10"
+          python-version: '3.10'
           architecture: ${{ matrix.architecture }}
 
       - name: Install Miniconda
         uses: conda-incubator/setup-miniconda@v3
         with:
           auto-update-conda: true
-          python-version: "3.10"
+          python-version: '3.10'
           architecture: ${{ matrix.architecture }}
 
       - name: Install SLEEF and other dependencies
@@ -195,27 +195,27 @@ jobs:
       - name: Build wheels
         env:
           CONDA_PREFIX: ${{ env.CONDA_PREFIX }}
-          CIBW_SKIP: "pp* cp36-* cp37-* cp38-* cp39-* cp313-*"
+          CIBW_SKIP: 'pp* cp36-* cp37-* cp38-* cp39-* cp313-*'
           CIBW_ARCHS_WINDOWS: ${{ matrix.architecture == 'x86' && 'x86' || 'AMD64' }}
-          CIBW_BUILD_VERBOSITY: "1"
+          CIBW_BUILD_VERBOSITY: '1'
           SLEEF_INCLUDE_DIR: ${{ env.CONDA_PREFIX }}\Library\include
           SLEEF_LIBRARY: ${{ env.CONDA_PREFIX }}\Library\lib
-          DISTUTILS_USE_SDK: "1"
-          MSSdk: "1"
+          DISTUTILS_USE_SDK: '1'
+          MSSdk: '1'
           NUMPY_INCLUDE_DIR: ${{ env.NUMPY_INCLUDE_DIR }}
           CIBW_ENVIRONMENT: >-
             NUMPY_INCLUDE_DIR="${{ env.NUMPY_INCLUDE_DIR }}"
             SLEEF_INCLUDE_DIR="${{ env.CONDA_PREFIX }}/Library/include"
             SLEEF_LIBRARY="${{ env.CONDA_PREFIX }}/Library/lib"
           CIBW_BEFORE_BUILD: pip install meson meson-python ninja numpy
-          CIBW_REPAIR_WHEEL_COMMAND: "delvewheel repair -w {dest_dir} {wheel}"
+          CIBW_REPAIR_WHEEL_COMMAND: 'delvewheel repair -w {dest_dir} {wheel}'
           CIBW_TEST_COMMAND: |
             python -c "import platform; print('Python version:', platform.python_version())"
             python -c "import sys; print('sys.platform:', sys.platform)"
             python -c "import quaddtype; print('quaddtype imported successfully')"
             pip install {package}[test]
             pytest {project}\tests -v || (echo "Tests failed" && exit 1)
-          CIBW_TEST_EXTRAS: "test"
+          CIBW_TEST_EXTRAS: 'test'
           CIBW_TEST_FAIL_FAST: 1
         shell: pwsh
         run: |
