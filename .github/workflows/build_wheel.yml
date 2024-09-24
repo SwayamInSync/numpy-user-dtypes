@@ -221,7 +221,7 @@ jobs:
         run: |
           python -m cibuildwheel --output-dir wheelhouse
           if (-not (Test-Path wheelhouse/*.whl)) { throw "Wheel was not created" }
-        working-directory: quaddtype
+        working-directory: ./quaddtype
 
       - uses: actions/upload-artifact@v3
         with:
