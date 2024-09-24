@@ -5,7 +5,7 @@ py = py_mod.find_installation()
 py_dep = py.dependency()
 
 c = meson.get_compiler('c')
-cpp = meson.get_compiler('cpp')
+# cpp = meson.get_compiler('cpp')
 
 is_windows = build_machine.system() == 'windows'
 
