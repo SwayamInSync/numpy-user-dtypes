@@ -105,7 +105,7 @@ py.extension_module('_quaddtype_main',
 srcs,
 link_args: is_windows ? ['/DEFAULTLIB:sleef', '/DEFAULTLIB:sleefquad'] : ['-lsleef', '-lsleefquad'],
 link_language: 'cpp',
-dependencies: [sleef_dep, sleefquad_dep],
+dependencies: [sleef_dep] + (is_windows ? [] : [sleefquad_dep]),
 install: true,
 subdir: 'numpy_quaddtype',
 include_directories: includes
