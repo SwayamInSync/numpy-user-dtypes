@@ -134,7 +134,7 @@ jobs:
 
       - uses: actions/upload-artifact@v3
         with:
-          path: ./numpy_quaddtype/wheelhouse/*.whl
+          path: ./quaddtype/wheelhouse/*.whl
           name: wheels-${{ matrix.os }}
 
   build_wheels_windows:
@@ -225,7 +225,7 @@ jobs:
 
       - uses: actions/upload-artifact@v3
         with:
-          path: ./numpy_quaddtype/wheelhouse/*.whl
+          path: ./quaddtype/wheelhouse/*.whl
           name: wheels-windows-${{ matrix.architecture }}
 
   publish_to_testpypi:
