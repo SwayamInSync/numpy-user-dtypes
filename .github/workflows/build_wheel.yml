@@ -60,7 +60,7 @@ jobs:
           CIBW_TEST_EXTRAS: 'test'
         run: |
           python -m cibuildwheel --output-dir wheelhouse
-        working-directory: ./numpy_quaddtype
+        working-directory: = quaddtype
 
       - uses: actions/upload-artifact@v3
         with:
@@ -129,7 +129,7 @@ jobs:
           python --version
           which pip
           pip --version
-          cd numpy_quaddtype
+          cd quaddtype
           python -m cibuildwheel --output-dir wheelhouse
 
       - uses: actions/upload-artifact@v3
@@ -221,7 +221,7 @@ jobs:
         run: |
           python -m cibuildwheel --output-dir wheelhouse
           if (-not (Test-Path wheelhouse/*.whl)) { throw "Wheel was not created" }
-        working-directory: ./numpy_quaddtype
+        working-directory: quaddtype
 
       - uses: actions/upload-artifact@v3
         with:
