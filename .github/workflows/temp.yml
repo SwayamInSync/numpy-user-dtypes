@@ -19,6 +19,14 @@ jobs:
     steps:
       - uses: actions/checkout@v3
 
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.10'
+
+      - name: Install cibuildwheel
+        run: pip install cibuildwheel==2.20.0
+
       - name: Setup Miniconda
         uses: conda-incubator/setup-miniconda@v3
         with:
@@ -32,7 +40,7 @@ jobs:
         run: |
           conda install -y -c conda-forge sleef numpy
           conda install -y pip
-          pip install cibuildwheel==2.20.0 meson meson-python ninja
+          pip install meson meson-python ninja
 
       - name: Build wheels
         shell: bash -l {0}
@@ -41,6 +49,7 @@ jobs:
           CIBW_SKIP: 'pp* cp36-* cp37-* cp38-* cp39-* cp313-*'
           CIBW_MANYLINUX_X86_64_IMAGE: manylinux_2_28
           CIBW_ENVIRONMENT: >
+            CONDA_PREFIX="$CONDA_PREFIX"
             PATH="$CONDA_PREFIX/bin:$PATH"
             LD_LIBRARY_PATH="$CONDA_PREFIX/lib:$LD_LIBRARY_PATH"
             LIBRARY_PATH="$CONDA_PREFIX/lib:$LIBRARY_PATH"
@@ -78,7 +87,7 @@ jobs:
           which pip
           pip --version
           cd quaddtype
-          python -m cibuildwheel --output-dir wheelhouse
+          /usr/bin/python3 -m cibuildwheel --output-dir wheelhouse
 
       - uses: actions/upload-artifact@v3
         with:
