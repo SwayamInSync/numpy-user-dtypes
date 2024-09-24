@@ -60,7 +60,7 @@ jobs:
           CIBW_TEST_EXTRAS: 'test'
         run: |
           python -m cibuildwheel --output-dir wheelhouse
-        working-directory: = quaddtype
+        working-directory: = ./quaddtype
 
       - uses: actions/upload-artifact@v3
         with:
