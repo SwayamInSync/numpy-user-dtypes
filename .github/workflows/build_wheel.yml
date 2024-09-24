@@ -54,17 +54,17 @@ jobs:
             python -c "import os; print('SLEEF_PATH:', os.environ.get('SLEEF_PATH', 'Not set'))"
             python -c "import platform; print('Python version:', platform.python_version())"
             python -c "import sys; print('sys.platform:', sys.platform)"
-            python -c "import quaddtype; print('quaddtype imported successfully')"
+            python -c "import numpy_quaddtype; print('numpy_quaddtype imported successfully')"
             pip install {package}[test]
             pytest {project}/tests
           CIBW_TEST_EXTRAS: 'test'
         run: |
           python -m cibuildwheel --output-dir wheelhouse
-        working-directory: ./quaddtype
+        working-directory: ./numpy_quaddtype
 
       - uses: actions/upload-artifact@v3
         with:
-          path: ./quaddtype/wheelhouse/*.whl
+          path: ./numpy_quaddtype/wheelhouse/*.whl
           name: wheels-linux
 
   build_wheels_macos:
@@ -117,7 +117,7 @@ jobs:
             python -c "import os; print('SLEEF_PATH:', os.environ.get('SLEEF_PATH', 'Not set'))"
             python -c "import platform; print('Python version:', platform.python_version())"
             python -c "import sys; print('sys.platform:', sys.platform)"
-            python -c "import quaddtype; print('quaddtype imported successfully')"
+            python -c "import numpy_quaddtype; print('numpy_quaddtype imported successfully')"
             pip install {package}[test]
             pytest {project}/tests
           CIBW_TEST_EXTRAS: 'test'
@@ -129,12 +129,12 @@ jobs:
           python --version
           which pip
           pip --version
-          cd quaddtype
+          cd numpy_quaddtype
           python -m cibuildwheel --output-dir wheelhouse
 
       - uses: actions/upload-artifact@v3
         with:
-          path: ./quaddtype/wheelhouse/*.whl
+          path: ./numpy_quaddtype/wheelhouse/*.whl
           name: wheels-${{ matrix.os }}
 
   build_wheels_windows:
@@ -212,7 +212,7 @@ jobs:
           CIBW_TEST_COMMAND: |
             python -c "import platform; print('Python version:', platform.python_version())"
             python -c "import sys; print('sys.platform:', sys.platform)"
-            python -c "import quaddtype; print('quaddtype imported successfully')"
+            python -c "import numpy_quaddtype; print('numpy_quaddtype imported successfully')"
             pip install {package}[test]
             pytest {project}\tests -v || (echo "Tests failed" && exit 1)
           CIBW_TEST_EXTRAS: 'test'
@@ -221,11 +221,11 @@ jobs:
         run: |
           python -m cibuildwheel --output-dir wheelhouse
           if (-not (Test-Path wheelhouse/*.whl)) { throw "Wheel was not created" }
-        working-directory: ./quaddtype
+        working-directory: ./numpy_quaddtype
 
       - uses: actions/upload-artifact@v3
         with:
-          path: ./quaddtype/wheelhouse/*.whl
+          path: ./numpy_quaddtype/wheelhouse/*.whl
           name: wheels-windows-${{ matrix.architecture }}
 
   publish_to_testpypi:
