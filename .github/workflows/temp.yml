@@ -63,12 +63,12 @@ jobs:
             pytest {project}/tests
           CIBW_TEST_EXTRAS: 'test'
         run: |
-          if [[ "${{ matrix.os }}" == ubuntu-* ]]; then
-            CIBW_BUILD='cp310-manylinux_x86_64 cp311-manylinux_x86_64 cp312-manylinux_x86_64'
-          elif [[ "${{ matrix.os }}" == macos-13 ]]; then
-            CIBW_ARCHS_MACOS='x86_64'
-          elif [[ "${{ matrix.os }}" == macos-14 ]]; then
-            CIBW_ARCHS_MACOS='arm64'
+          if [[ "${{ runner.os }}" == "Linux" ]]; then
+            export CIBW_BUILD='cp310-manylinux_x86_64 cp311-manylinux_x86_64 cp312-manylinux_x86_64'
+          elif [[ "${{ matrix.os }}" == "macos-13" ]]; then
+            export CIBW_ARCHS_MACOS='x86_64'
+          elif [[ "${{ matrix.os }}" == "macos-14" ]]; then
+            export CIBW_ARCHS_MACOS='arm64'
           fi
           echo "CONDA_PREFIX: $CONDA_PREFIX"
           ls $CONDA_PREFIX/include/sleef*
