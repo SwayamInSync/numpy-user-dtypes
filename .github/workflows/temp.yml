@@ -31,12 +31,11 @@ jobs:
           python-version: '3.10'
           channels: conda-forge
 
-      - name: Install SLEEF and dependencies
+      - name: Install SLEEF
         shell: bash -l {0}
         run: |
-          conda install -y -c conda-forge sleef numpy
-          echo "SLEEF_PATH=$CONDA_PREFIX" >> $GITHUB_ENV
-          echo "NUMPY_INCLUDE_DIR=$(python -c 'import numpy; print(numpy.get_include())')" >> $GITHUB_ENV
+          conda install -y -c conda-forge sleef
+          echo $CONDA_PREFIX
 
       - name: Install cibuildwheel
         run: pip install cibuildwheel==2.20.0
@@ -47,20 +46,21 @@ jobs:
           CIBW_SKIP: 'pp* cp36-* cp37-* cp38-* cp39-* cp313-*'
           CIBW_MANYLINUX_X86_64_IMAGE: manylinux_2_28
           CIBW_ENVIRONMENT: >
-            SLEEF_PATH="${{ env.SLEEF_PATH }}"
-            NUMPY_INCLUDE_DIR="${{ env.NUMPY_INCLUDE_DIR }}"
-            LD_LIBRARY_PATH="${{ env.SLEEF_PATH }}/lib:$LD_LIBRARY_PATH"
-            LIBRARY_PATH="${{ env.SLEEF_PATH }}/lib:$LIBRARY_PATH"
-            CFLAGS="-I${{ env.SLEEF_PATH }}/include $CFLAGS"
-            CXXFLAGS="-I${{ env.SLEEF_PATH }}/include $CXXFLAGS"
-            LDFLAGS="-L${{ env.SLEEF_PATH }}/lib $LDFLAGS"
+            LD_LIBRARY_PATH="$CONDA_PREFIX/lib:$LD_LIBRARY_PATH"
+            LIBRARY_PATH="$CONDA_PREFIX/lib:$LIBRARY_PATH"
+            CFLAGS="-I$CONDA_PREFIX/include $CFLAGS"
+            CXXFLAGS="-I$CONDA_PREFIX/include $CXXFLAGS"
+            LDFLAGS="-L$CONDA_PREFIX/lib $LDFLAGS"
           CIBW_BEFORE_BUILD: pip install meson meson-python ninja numpy
           CIBW_REPAIR_WHEEL_COMMAND_LINUX: >
             auditwheel repair -w {dest_dir} --plat manylinux_2_28_x86_64 {wheel}
           CIBW_REPAIR_WHEEL_COMMAND_MACOS: >
             delocate-wheel -w {dest_dir} -v {wheel}
           CIBW_TEST_COMMAND: |
-            python -c "import os, platform, sys, numpy_quaddtype; print(f'SLEEF_PATH: {os.environ.get("SLEEF_PATH", "Not set")}\nPython version: {platform.python_version()}\nsys.platform: {sys.platform}\nnumpy_quaddtype imported successfully')"
+            python -c "import os; print('CONDA_PREFIX:', os.environ.get('CONDA_PREFIX', 'Not set'))"
+            python -c "import platform; print('Python version:', platform.python_version())"
+            python -c "import sys; print('sys.platform:', sys.platform)"
+            python -c "import numpy_quaddtype; print('numpy_quaddtype imported successfully')"
             pip install {package}[test]
             pytest {project}/tests
           CIBW_TEST_EXTRAS: 'test'
@@ -72,6 +72,13 @@ jobs:
           elif [[ "${{ matrix.os }}" == macos-14 ]]; then
             CIBW_ARCHS_MACOS='arm64'
           fi
+          echo "CONDA_PREFIX: $CONDA_PREFIX"
+          ls $CONDA_PREFIX/include/sleef*
+          echo "PATH: $PATH"
+          which python
+          python --version
+          which pip
+          pip --version
           cd quaddtype
           python -m cibuildwheel --output-dir wheelhouse
 
@@ -79,55 +86,3 @@ jobs:
         with:
           path: ./quaddtype/wheelhouse/*.whl
           name: wheels-${{ matrix.os }}
-
-  publish_to_testpypi:
-    name: Publish to TestPyPI
-    needs: [build_wheels]
-    runs-on: ubuntu-latest
-    if: startsWith(github.ref, 'refs/tags/')
-    steps:
-      - name: Download all workflow run artifacts
-        uses: actions/download-artifact@v2
-        with:
-          path: dist
-      - name: Publish to TestPyPI
-        uses: pypa/gh-action-pypi-publish@v1.9.0
-        with:
-          user: __token__
-          password: ${{ secrets.PYPI_API_TOKEN }}
-          repository-url: https://test.pypi.org/legacy/
-          packages-dir: dist/*
-
-  create_release:
-    name: Create Release
-    needs: [build_wheels]
-    runs-on: ubuntu-latest
-    if: startsWith(github.ref, 'refs/tags/')
-
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v2
-
-      - name: Download all workflow run artifacts
-        uses: actions/download-artifact@v2
-        with:
-          path: artifacts
-
-      - name: Create Release
-        id: create_release
-        uses: actions/create-release@v1
-        env:
-          GITHUB_TOKEN: ${{ secrets.ACCESS_TOKEN }}
-        with:
-          tag_name: ${{ github.ref }}
-          release_name: Release ${{ github.ref }}
-          draft: false
-          prerelease: false
-
-      - name: Upload Release Assets
-        uses: softprops/action-gh-release@v1
-        if: startsWith(github.ref, 'refs/tags/')
-        with:
-          files: ./artifacts/**/*.whl
-        env:
-          GITHUB_TOKEN: ${{ secrets.ACCESS_TOKEN }}
