@@ -73,10 +73,16 @@ jobs:
           brew install mpfr openssl fftw cmake
 
       - name: Install SLEEF
+        env:
+          MACOSX_DEPLOYMENT_TARGET: '11.0'
         run: |
           git clone https://github.com/shibatch/sleef.git
           cd sleef
-          cmake -S . -B build -DSLEEF_BUILD_QUAD:BOOL=ON -DSLEEF_BUILD_SHARED_LIBS:BOOL=ON -DCMAKE_POSITION_INDEPENDENT_CODE=ON
+          cmake -S . -B build \
+            -DSLEEF_BUILD_QUAD:BOOL=ON \
+            -DSLEEF_BUILD_SHARED_LIBS:BOOL=ON \
+            -DCMAKE_POSITION_INDEPENDENT_CODE=ON \
+            -DCMAKE_OSX_DEPLOYMENT_TARGET=11.0
           cmake --build build/ --clean-first -j
           sudo cmake --install build --prefix /usr/local
 
@@ -89,7 +95,7 @@ jobs:
           CIBW_ARCHS_MACOS: ${{ matrix.os == 'macos-13' && 'x86_64' || 'arm64' }}
           CIBW_BUILD_VERBOSITY: '1'
           CIBW_ENVIRONMENT: >
-            MACOSX_DEPLOYMENT_TARGET="10.13"
+            MACOSX_DEPLOYMENT_TARGET="11.0"
             CFLAGS="-I/usr/local/include $CFLAGS"
             CXXFLAGS="-I/usr/local/include $CXXFLAGS"
             LDFLAGS="-L/usr/local/lib $LDFLAGS"
