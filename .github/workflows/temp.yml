@@ -1,15 +1,4 @@
-name: Build Wheels
-
-on:
-  push:
-    branches:
-      - package-fix
-    tags:
-      - 'v*'
-  pull_request:
-
-jobs:
-  build_wheels_windows:
+build_wheels_windows:
     name: Build wheels on Windows
     runs-on: windows-latest
     strategy:
@@ -23,13 +12,23 @@ jobs:
         uses: ilammy/msvc-dev-cmd@v1
         with:
           arch: ${{ matrix.architecture }}
-      - name: Adjust PATH for MSVC
+
+      - name: Adjust PATH for MSVC and verify tools
         shell: powershell
         run: |
-          $env:PATH = "C:\Program Files (x86)\Microsoft Visual Studio\2019\Enterprise\VC\Tools\MSVC\14.29.30133\bin\Hostx64\x64;C:\Program Files (x86)\Windows Kits\10\bin\10.0.19041.0\x64;$env:PATH"
-          echo $env:PATH
+          $vsPath = & "${env:ProgramFiles(x86)}\Microsoft Visual Studio\Installer\vswhere.exe" -latest -property installationPath
+          $linkPath = Join-Path $vsPath "VC\Tools\MSVC\*\bin\Hostx64\x64\link.exe"
+          $link = Get-ChildItem $linkPath | Select-Object -First 1 -ExpandProperty DirectoryName
+          $env:PATH = "$link;$env:PATH"
+          echo "Updated PATH: $env:PATH"
           echo "PATH=$env:PATH" >> $env:GITHUB_ENV
           
+          # Verify MSVC tools
+          where link
+          where cl
+          link
+          cl
+
       - name: Set up Python
         uses: actions/setup-python@v4
         with:
@@ -67,7 +66,10 @@ jobs:
             PATH="C:\\sleef\\bin;$PATH"
           CIBW_REPAIR_WHEEL_COMMAND: >
             delvewheel repair -w {dest_dir} {wheel}
-          CIBW_BEFORE_BUILD: pip install delvewheel
+          CIBW_BEFORE_BUILD: |
+            pip install delvewheel
+            where link
+            where cl
           CIBW_TEST_COMMAND: |
             pip install {package}[test]
             pytest {project}\tests
