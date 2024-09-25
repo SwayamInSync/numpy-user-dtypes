@@ -151,6 +151,13 @@ jobs:
         uses: ilammy/msvc-dev-cmd@v1
         with:
           arch: ${{ matrix.architecture }}
+          
+      - name: Adjust PATH for MSVC
+        shell: powershell
+        run: |
+          $env:PATH = "C:\Program Files (x86)\Microsoft Visual Studio\2019\Enterprise\VC\Tools\MSVC\14.29.30133\bin\Hostx64\x64;C:\Program Files (x86)\Windows Kits\10\bin\10.0.19041.0\x64;$env:PATH"
+          echo $env:PATH
+          echo "PATH=$env:PATH" >> $env:GITHUB_ENV
 
       - name: Set up Python 3.10
         uses: actions/setup-python@v4
