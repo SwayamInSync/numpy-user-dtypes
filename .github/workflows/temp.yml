@@ -14,7 +14,7 @@ jobs:
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        os: [ubuntu-latest, macos-13, macos-14]
+        os: [ubuntu-latest, macos-latest]
 
     steps:
       - uses: actions/checkout@v3
@@ -25,62 +25,49 @@ jobs:
           python-version: '3.10'
 
       - name: Install cibuildwheel
-        run: |
-          python -m pip install --upgrade pip
-          pip install cibuildwheel==2.20.0
-
-      - name: Setup Miniconda
-        uses: conda-incubator/setup-miniconda@v3
-        with:
-          auto-update-conda: true
-          python-version: '3.10'
-          channels: conda-forge
-          activate-environment: build_env
-
-      - name: Install SLEEF
-        shell: bash -l {0}
-        run: |
-          conda install -y -c conda-forge sleef
-          echo "SLEEF_PATH=$CONDA_PREFIX" >> $GITHUB_ENV
+        run: pip install cibuildwheel==2.20.0
 
       - name: Build wheels
         env:
-          CIBW_BUILD_VERBOSITY: '1'
-          CIBW_SKIP: 'pp* cp36-* cp37-* cp38-* cp39-* cp313-*'
+          CIBW_BUILD: 'cp310-* cp311-* cp312-*'
+          CIBW_ARCHS_MACOS: "x86_64 arm64"
+          CIBW_ARCHS_LINUX: "x86_64"
           CIBW_MANYLINUX_X86_64_IMAGE: manylinux_2_28
+          CIBW_BUILD_VERBOSITY: '3'
+          CIBW_BEFORE_ALL_LINUX: |
+            yum install -y mpfr-devel openssl-devel fftw-devel
+            git clone https://github.com/shibatch/sleef.git
+            cd sleef
+            cmake -S . -B build -DSLEEF_BUILD_QUAD:BOOL=ON -DSLEEF_BUILD_SHARED_LIBS:BOOL=ON -DCMAKE_POSITION_INDEPENDENT_CODE=ON
+            cmake --build build/ --clean-first -j
+            cmake --install build --prefix /usr
+          CIBW_BEFORE_ALL_MACOS: |
+            brew install mpfr openssl fftw
+            git clone https://github.com/shibatch/sleef.git
+            cd sleef
+            cmake -S . -B build -DSLEEF_BUILD_QUAD:BOOL=ON -DSLEEF_BUILD_SHARED_LIBS:BOOL=ON -DCMAKE_POSITION_INDEPENDENT_CODE=ON
+            cmake --build build/ --clean-first -j
+            sudo cmake --install build --prefix /usr/local
           CIBW_ENVIRONMENT: >
-            SLEEF_PATH="${{ env.SLEEF_PATH }}"
-            LD_LIBRARY_PATH="${{ env.SLEEF_PATH }}/lib:$LD_LIBRARY_PATH"
-            LIBRARY_PATH="${{ env.SLEEF_PATH }}/lib:$LIBRARY_PATH"
-            CFLAGS="-I${{ env.SLEEF_PATH }}/include $CFLAGS"
-            CXXFLAGS="-I${{ env.SLEEF_PATH }}/include $CXXFLAGS"
-            LDFLAGS="-L${{ env.SLEEF_PATH }}/lib $LDFLAGS"
-          CIBW_BEFORE_BUILD: >
-            pip install meson meson-python ninja numpy
+            SLEEF_INCLUDE_DIR="/usr/include"
+            SLEEF_LIBRARY="/usr/lib"
+          CIBW_ENVIRONMENT_MACOS: >
+            SLEEF_INCLUDE_DIR="/usr/local/include"
+            SLEEF_LIBRARY="/usr/local/lib"
           CIBW_REPAIR_WHEEL_COMMAND_LINUX: >
             auditwheel repair -w {dest_dir} --plat manylinux_2_28_x86_64 {wheel}
           CIBW_REPAIR_WHEEL_COMMAND_MACOS: >
             delocate-wheel -w {dest_dir} -v {wheel}
+          CIBW_TEST_REQUIRES: pytest
           CIBW_TEST_COMMAND: |
             python -c "import os; print('SLEEF_PATH:', os.environ.get('SLEEF_PATH', 'Not set'))"
             python -c "import platform; print('Python version:', platform.python_version())"
             python -c "import sys; print('sys.platform:', sys.platform)"
             python -c "import numpy_quaddtype; print('numpy_quaddtype imported successfully')"
-            pip install {package}[test]
-            pytest {project}/tests
-          CIBW_TEST_EXTRAS: 'test'
+            pytest {project}/tests -v
         run: |
-          if [[ "${{ runner.os }}" == "Linux" ]]; then
-            export CIBW_BUILD='cp310-manylinux_x86_64 cp311-manylinux_x86_64 cp312-manylinux_x86_64'
-          elif [[ "${{ matrix.os }}" == "macos-13" ]]; then
-            export CIBW_ARCHS_MACOS='x86_64'
-          elif [[ "${{ matrix.os }}" == "macos-14" ]]; then
-            export CIBW_ARCHS_MACOS='arm64'
-          fi
-          echo "SLEEF_PATH: $SLEEF_PATH"
-          ls $SLEEF_PATH/include/sleef*
-          cd quaddtype
           python -m cibuildwheel --output-dir wheelhouse
+        working-directory: ./quaddtype
 
       - uses: actions/upload-artifact@v3
         with:

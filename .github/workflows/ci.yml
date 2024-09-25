@@ -52,7 +52,8 @@ jobs:
           python -m build --no-isolation --wheel -Cbuilddir=build
           find ./dist/*.whl | xargs python -m pip install
       - name: Run unytdtype tests
-        working-directory: unytdtype
+        working-directory:y
+         unytdtype
         run: |
           pytest -vvv --color=yes
       - name: Install quaddtype dependencies
