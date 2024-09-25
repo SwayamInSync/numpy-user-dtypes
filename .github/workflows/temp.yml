@@ -35,9 +35,9 @@ jobs:
               cmake --build build/ --clean-first -j
               cmake --install build --prefix /usr/local
             CIBW_ENVIRONMENT: >
-              CFLAGS="-I/usr/local/include $CFLAGS"
-              CXXFLAGS="-I/usr/local/include $CXXFLAGS"
-              LDFLAGS="-L/usr/local/lib $LDFLAGS"
+              CFLAGS="-I/usr/local/include:$CFLAGS"
+              CXXFLAGS="-I/usr/local/include:$CXXFLAGS"
+              LDFLAGS="-L/usr/local/lib:$LDFLAGS"
               LD_LIBRARY_PATH="/usr/local/lib:$LD_LIBRARY_PATH"
               DYLD_LIBRARY_PATH=/usr/local/lib
               LIBRARY_PATH="/usr/local/lib:$LIBRARY_PATH"
