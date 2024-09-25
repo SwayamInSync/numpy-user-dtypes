@@ -39,6 +39,7 @@ jobs:
               CXXFLAGS="-I/usr/local/include $CXXFLAGS"
               LDFLAGS="-L/usr/local/lib $LDFLAGS"
               LD_LIBRARY_PATH="/usr/local/lib:$LD_LIBRARY_PATH"
+              DYLD_LIBRARY_PATH=/usr/local/lib
             CIBW_REPAIR_WHEEL_COMMAND: >
               auditwheel repair -w {dest_dir} --plat manylinux_2_28_x86_64 {wheel}
             CIBW_TEST_COMMAND: |
