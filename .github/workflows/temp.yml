@@ -76,7 +76,7 @@ jobs:
             -DSLEEF_BUILD_SHARED_LIBS:BOOL=ON \
             -DCMAKE_POSITION_INDEPENDENT_CODE=ON \
             -DCMAKE_OSX_DEPLOYMENT_TARGET=11.0 \
-            -DCMAKE_INSTALL_RPATH="@loader_path" \
+            -DCMAKE_INSTALL_RPATH="@loader_path/../lib" \
             -DCMAKE_BUILD_WITH_INSTALL_RPATH=ON
           cmake --build build/ --clean-first -j
           sudo cmake --install build --prefix /usr/local
@@ -91,15 +91,13 @@ jobs:
           CIBW_BUILD_VERBOSITY: '1'
           CIBW_ENVIRONMENT: >
             MACOSX_DEPLOYMENT_TARGET="11.0"
+            DYLD_LIBRARY_PATH=/usr/local/lib
             CFLAGS="-I/usr/local/include $CFLAGS"
             CXXFLAGS="-I/usr/local/include $CXXFLAGS"
             LDFLAGS="-L/usr/local/lib $LDFLAGS"
           CIBW_REPAIR_WHEEL_COMMAND: >
-            delocate-wheel --require-archs {delocate_archs} -w {dest_dir} -v {wheel} &&
-            install_name_tool -change @rpath/libsleefquad.3.dylib @loader_path/libsleefquad.3.dylib {wheel}/numpy_quaddtype/_quaddtype_main.*.so &&
-            cp /usr/local/lib/libsleef*.dylib {wheel}/numpy_quaddtype/
+            delocate-wheel --require-archs {delocate_archs} -w {dest_dir} -v {wheel}
           CIBW_TEST_COMMAND: |
-            python -c "import numpy_quaddtype; print('numpy_quaddtype imported successfully')"
             pip install {package}[test]
             pytest {project}/tests
           CIBW_TEST_EXTRAS: 'test'
