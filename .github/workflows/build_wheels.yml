@@ -3,13 +3,40 @@ name: Build Wheels
 on:
   push:
     branches:
-      - package-fix
+      - main
     tags:
-      - 'v*'
+      - "quaddtype-v*"
+    paths:
+      - 'quaddtype/**'
   pull_request:
+    paths:
+      - 'quaddtype/**'
+  workflow_dispatch:
 
 jobs:
+  check_build_needed:
+    runs-on: ubuntu-latest
+    outputs:
+      build_needed: ${{ steps.check.outputs.build_needed }}
+    steps:
+      - uses: actions/checkout@v3
+        with:
+          fetch-depth: 2
+      - id: check
+        run: |
+          if [[ "${{ github.event_name }}" == "push" && "${{ github.ref }}" == "refs/tags/quaddtype-v"* ]]; then
+            echo "build_needed=true" >> $GITHUB_OUTPUT
+          elif [[ "${{ github.event_name }}" == "workflow_dispatch" ]]; then
+            echo "build_needed=true" >> $GITHUB_OUTPUT
+          elif git log -1 --pretty=%B | grep -q "\[wheel build\]"; then
+            echo "build_needed=true" >> $GITHUB_OUTPUT
+          else
+            echo "build_needed=false" >> $GITHUB_OUTPUT
+          fi
+
   build_wheels_linux:
+    needs: check_build_needed
+    if: needs.check_build_needed.outputs.build_needed == 'true'
     name: Build wheels on Linux
     runs-on: ubuntu-latest
     steps:
@@ -55,6 +82,8 @@ jobs:
           name: wheels-linux
 
   build_wheels_macos:
+    needs: check_build_needed
+    if: needs.check_build_needed.outputs.build_needed == 'true'
     name: Build wheels on ${{ matrix.os }}
     runs-on: ${{ matrix.os }}
     strategy:
@@ -114,6 +143,8 @@ jobs:
           name: wheels-${{ matrix.os }}
 
   build_wheels_windows:
+    needs: check_build_needed
+    if: needs.check_build_needed.outputs.build_needed == 'true'
     name: Build wheels on Windows
     runs-on: windows-latest
     strategy:
