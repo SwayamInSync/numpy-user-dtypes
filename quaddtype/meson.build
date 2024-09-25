@@ -41,10 +41,6 @@ includes = include_directories(
     ]
 )
 
-if is_windows
-  includes += include_directories(sleef_include_dir)
-endif
-
 srcs = [
     'numpy_quaddtype/src/quad_common.h',
     'numpy_quaddtype/src/casts.h',
