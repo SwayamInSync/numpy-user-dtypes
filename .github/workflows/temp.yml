@@ -1,4 +1,15 @@
-build_wheels_windows:
+name: Build Wheels
+
+on:
+  push:
+    branches:
+      - package-fix
+    tags:
+      - 'v*'
+  pull_request:
+
+jobs:
+  build_wheels_windows:
     name: Build wheels on Windows
     runs-on: windows-latest
     strategy:
