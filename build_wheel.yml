@@ -211,7 +211,7 @@ jobs:
           CIBW_REPAIR_WHEEL_COMMAND: 'delvewheel repair -w {dest_dir} {wheel}'
           CIBW_TEST_COMMAND: |
             pip install {package}[test]
-           pytest {project}/tests
+            pytest {project}/tests
           CIBW_TEST_EXTRAS: 'test'
           CIBW_TEST_FAIL_FAST: 1
         shell: pwsh
