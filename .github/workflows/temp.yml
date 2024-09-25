@@ -51,13 +51,6 @@ jobs:
           ls -l "$CONDA_PREFIX/Library/include/sleef.h"
           ls -l "$CONDA_PREFIX/Library/lib/sleef"*
 
-      - name: Set environment variables
-        shell: pwsh
-        run: |
-          echo "CONDA_PREFIX=$env:CONDA_PREFIX" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
-          $numpy_path = python -c "import numpy; import os; print(os.path.abspath(numpy.get_include()).replace(os.sep, '/'))"
-          echo "NUMPY_INCLUDE_DIR=$numpy_path" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
-
       - name: Install build dependencies
         shell: bash -l {0}
         run: |
@@ -66,21 +59,17 @@ jobs:
 
       - name: Build wheels
         env:
-          CONDA_PREFIX: ${{ env.CONDA_PREFIX }}
           CIBW_BUILD: 'cp310-* cp311-* cp312-*'
           CIBW_SKIP: 'pp* cp36-* cp37-* cp38-* cp39-* cp313-*'
           CIBW_ARCHS_WINDOWS: ${{ matrix.architecture == 'x86' && 'x86' || 'AMD64' }}
           CIBW_BUILD_VERBOSITY: '1'
-          SLEEF_INCLUDE_DIR: ${{ env.CONDA_PREFIX }}\Library\include
-          SLEEF_LIBRARY: ${{ env.CONDA_PREFIX }}\Library\lib
           DISTUTILS_USE_SDK: '1'
           MSSdk: '1'
-          NUMPY_INCLUDE_DIR: ${{ env.NUMPY_INCLUDE_DIR }}
-          CIBW_ENVIRONMENT: >-
-            NUMPY_INCLUDE_DIR="${{ env.NUMPY_INCLUDE_DIR }}"
-            SLEEF_INCLUDE_DIR="${{ env.CONDA_PREFIX }}/Library/include"
-            SLEEF_LIBRARY="${{ env.CONDA_PREFIX }}/Library/lib"
-          CIBW_BEFORE_BUILD: pip install meson meson-python ninja numpy
+          CIBW_BEFORE_BUILD: |
+            pip install meson meson-python ninja numpy
+            echo %CONDA_PREFIX%
+            dir %CONDA_PREFIX%\Library\include
+            dir %CONDA_PREFIX%\Library\lib
           CIBW_REPAIR_WHEEL_COMMAND: 'delvewheel repair -w {dest_dir} {wheel}'
           CIBW_TEST_COMMAND: |
             pip install {package}[test]
