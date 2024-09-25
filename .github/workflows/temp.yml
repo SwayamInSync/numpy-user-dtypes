@@ -33,7 +33,7 @@ jobs:
               cd sleef
               cmake -S . -B build -DSLEEF_BUILD_QUAD:BOOL=ON -DSLEEF_BUILD_SHARED_LIBS:BOOL=ON -DCMAKE_POSITION_INDEPENDENT_CODE=ON
               cmake --build build/ --clean-first -j
-              cmake --install build --prefix /usr
+              cmake --install build --prefix /usr/local
             CIBW_REPAIR_WHEEL_COMMAND: >
               auditwheel repair -w {dest_dir} --plat manylinux_2_28_x86_64 {wheel}
             CIBW_TEST_COMMAND: |
