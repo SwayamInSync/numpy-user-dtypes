@@ -78,7 +78,7 @@ jobs:
             -DCMAKE_INSTALL_RPATH="@loader_path/../lib" \
             -DCMAKE_BUILD_WITH_INSTALL_RPATH=ON
           cmake --build build/ --clean-first -j
-          sudo cmake --install build --prefix /usr/local
+          sudo cmake --install build --prefix /usr
 
       - name: Install cibuildwheel
         run: pip install cibuildwheel==2.20.0
@@ -89,10 +89,7 @@ jobs:
           CIBW_ARCHS_MACOS: ${{ matrix.os == 'macos-13' && 'x86_64' || 'arm64' }}
           CIBW_BUILD_VERBOSITY: '1'
           CIBW_ENVIRONMENT: >
-            DYLD_LIBRARY_PATH="/usr/local/lib:$DYLD_LIBRARY_PATH"
-            CFLAGS="-I/usr/local/include $CFLAGS"
-            CXXFLAGS="-I/usr/local/include $CXXFLAGS"
-            LDFLAGS="-L/usr/local/lib $LDFLAGS"
+            MACOSX_DEPLOYMENT_TARGET="11.0"
           CIBW_REPAIR_WHEEL_COMMAND: >
             delocate-wheel --require-archs {delocate_archs} -w {dest_dir} -v {wheel}
           CIBW_TEST_COMMAND: |
