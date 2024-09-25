@@ -43,19 +43,12 @@ jobs:
           conda config --add channels conda-forge
           conda config --set channel_priority strict
           conda install -y sleef numpy
-          conda list
-          if [ ! -f "$CONDA_PREFIX/Library/include/sleef.h" ]; then
-            echo "sleef.h not found. Installation may have failed."
-            exit 1
-          fi
-          ls -l "$CONDA_PREFIX/Library/include/sleef.h"
-          ls -l "$CONDA_PREFIX/Library/lib/sleef"*
 
-      - name: Install build dependencies
+      - name: Install cibuildwheel
         shell: bash -l {0}
         run: |
           pip install -U pip
-          pip install cibuildwheel==2.20.0 ninja meson meson-python numpy delvewheel pytest
+          pip install cibuildwheel==2.20.0
 
       - name: Build wheels
         env:
@@ -66,14 +59,11 @@ jobs:
           DISTUTILS_USE_SDK: '1'
           MSSdk: '1'
           CIBW_BEFORE_BUILD: |
-            pip install meson meson-python ninja numpy
-            echo %CONDA_PREFIX%
-            dir %CONDA_PREFIX%\Library\include
-            dir %CONDA_PREFIX%\Library\lib
+            pip install meson meson-python ninja numpy delvewheel pytest
           CIBW_REPAIR_WHEEL_COMMAND: 'delvewheel repair -w {dest_dir} {wheel}'
           CIBW_TEST_COMMAND: |
             pip install {package}[test]
-            pytest {project}/tests
+            python -m pytest -v ./quaddtype/tests
           CIBW_TEST_EXTRAS: 'test'
           CIBW_TEST_FAIL_FAST: 1
         shell: pwsh
