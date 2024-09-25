@@ -5,18 +5,16 @@ py = py_mod.find_installation()
 py_dep = py.dependency()
 
 c = meson.get_compiler('c')
-# cpp = meson.get_compiler('cpp')
+cpp = meson.get_compiler('cpp')
 
 is_windows = build_machine.system() == 'windows'
 
-incdir_numpy = ''
 if is_windows
   add_project_arguments('-DWIN32', '-D_WINDOWS', language : ['c', 'cpp'])
   
   conda_env_dir = run_command('cmd', '/c', 'echo %CONDA_PREFIX%', check: true).stdout().strip()
   sleef_include_dir = conda_env_dir + '\\Library\\include'
   sleef_library_dir = conda_env_dir + '\\Library\\lib'
-  incdir_numpy = run_command('cmd', '/c', 'echo %NUMPY_INCLUDE_DIR%', check: true).stdout().strip()
   
   add_project_arguments('-I' + sleef_include_dir, language: ['c', 'cpp'])
   add_project_link_arguments('-L' + sleef_library_dir, language: ['c', 'cpp'])
@@ -72,11 +70,11 @@ py.install_sources(
 )
 
 py.extension_module('_quaddtype_main',
-srcs,
-link_args: is_windows ? ['/DEFAULTLIB:sleef', '/DEFAULTLIB:sleefquad'] : ['-lsleef', '-lsleefquad'],
-link_language: 'cpp',
-dependencies: [sleef_dep] + (is_windows ? [] : [sleefquad_dep]),
-install: true,
-subdir: 'numpy_quaddtype',
-include_directories: includes
+  srcs,
+  link_args: is_windows ? ['/DEFAULTLIB:sleef', '/DEFAULTLIB:sleefquad'] : ['-lsleef', '-lsleefquad'],
+  link_language: 'cpp',
+  dependencies: [sleef_dep, py_dep],
+  install: true,
+  subdir: 'numpy_quaddtype',
+  include_directories: includes
 )
