@@ -39,12 +39,17 @@ jobs:
             CXXFLAGS="-I/usr/local/include $CXXFLAGS"
             LDFLAGS="-L/usr/local/lib $LDFLAGS"
             LD_LIBRARY_PATH="/usr/local/lib:$LD_LIBRARY_PATH"
-          CIBW_REPAIR_WHEEL_COMMAND: >
-            auditwheel repair 
-            --lib-sdir /usr/local/lib 
-            -w {dest_dir} 
-            --plat manylinux_2_28_x86_64 
-            {wheel}
+          CIBW_BEFORE_BUILD: |
+            yum install -y patchelf
+            patchelf --set-rpath '$ORIGIN:/usr/local/lib' {project}/numpy_quaddtype/_quaddtype_main.*.so
+          CIBW_REPAIR_WHEEL_COMMAND: |
+            auditwheel repair -w {dest_dir} --plat manylinux_2_28_x86_64 {wheel}
+            WHEEL_FILE=$(ls {dest_dir}/*.whl)
+            mkdir wheel_contents && cd wheel_contents
+            unzip $WHEEL_FILE
+            cp /usr/local/lib/libsleef*.so* numpy_quaddtype/.libs/
+            zip -r $WHEEL_FILE *
+            cd .. && rm -rf wheel_contents
           CIBW_TEST_COMMAND: |
             pip install {package}[test]
             pytest {project}/tests
