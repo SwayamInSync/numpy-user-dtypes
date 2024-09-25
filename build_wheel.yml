@@ -210,11 +210,8 @@ jobs:
           CIBW_BEFORE_BUILD: pip install meson meson-python ninja numpy
           CIBW_REPAIR_WHEEL_COMMAND: 'delvewheel repair -w {dest_dir} {wheel}'
           CIBW_TEST_COMMAND: |
-            python -c "import platform; print('Python version:', platform.python_version())"
-            python -c "import sys; print('sys.platform:', sys.platform)"
-            python -c "import numpy_quaddtype; print('numpy_quaddtype imported successfully')"
             pip install {package}[test]
-            pytest {project}\tests -v || (echo "Tests failed" && exit 1)
+           pytest {project}/tests
           CIBW_TEST_EXTRAS: 'test'
           CIBW_TEST_FAIL_FAST: 1
         shell: pwsh
