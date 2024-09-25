@@ -89,7 +89,6 @@ jobs:
           CIBW_ARCHS_MACOS: ${{ matrix.os == 'macos-13' && 'x86_64' || 'arm64' }}
           CIBW_BUILD_VERBOSITY: '1'
           CIBW_ENVIRONMENT: >
-            MACOSX_DEPLOYMENT_TARGET="11.0"
             DYLD_LIBRARY_PATH="/usr/local/lib:$DYLD_LIBRARY_PATH"
             CFLAGS="-I/usr/local/include $CFLAGS"
             CXXFLAGS="-I/usr/local/include $CXXFLAGS"
