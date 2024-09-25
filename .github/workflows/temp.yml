@@ -112,13 +112,13 @@ jobs:
         with:
           path: ./quaddtype/wheelhouse/*.whl
           name: wheels-${{ matrix.os }}
-          
+
   build_wheels_windows:
     name: Build wheels on Windows
     runs-on: windows-latest
     strategy:
       matrix:
-        architecture: [x64]
+        architecture: [x64, x86]
 
     steps:
       - uses: actions/checkout@v3
@@ -147,13 +147,6 @@ jobs:
           conda config --add channels conda-forge
           conda config --set channel_priority strict
           conda install -y sleef numpy
-          conda list
-          if [ ! -f "$CONDA_PREFIX/Library/include/sleef.h" ]; then
-            echo "sleef.h not found. Installation may have failed."
-            exit 1
-          fi
-          ls -l "$CONDA_PREFIX/Library/include/sleef.h"
-          ls -l "$CONDA_PREFIX/Library/lib/sleef"*
 
       - name: Setup build environment
         shell: pwsh
