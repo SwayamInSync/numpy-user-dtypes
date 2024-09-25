@@ -89,14 +89,6 @@ jobs:
           if (-not (Test-Path wheelhouse/*.whl)) { throw "Wheel was not created" }
         working-directory: ./quaddtype
 
-      - name: Run tests explicitly
-        shell: pwsh
-        run: |
-          $wheel = Get-ChildItem wheelhouse/*.whl | Select-Object -First 1
-          pip install $wheel[test]
-          python -m pytest -v ./test
-        working-directory: ./quaddtype
-
       - uses: actions/upload-artifact@v4
         with:
           path: ./quaddtype/wheelhouse/*.whl

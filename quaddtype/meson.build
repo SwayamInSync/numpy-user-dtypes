@@ -11,23 +11,12 @@ is_windows = build_machine.system() == 'windows'
 
 if is_windows
   add_project_arguments('-DWIN32', '-D_WINDOWS', language : ['c', 'cpp'])
-  
-  conda_prefix = run_command('cmd', '/c', 'echo %CONDA_PREFIX%', check: true).stdout().strip()
-  sleef_lib_dir = conda_prefix + '\\Library\\lib'
-  sleef_include_dir = conda_prefix + '\\Library\\include'
-
-  add_project_arguments('-I' + sleef_include_dir, language: ['c', 'cpp'])
-  
-  sleef_dep = [
-    c.find_library('sleef', dirs : [sleef_lib_dir], required : true),
-    c.find_library('sleefquad', dirs : [sleef_lib_dir], required : true)
-  ]
-else
-  sleef_dep = [
-    c.find_library('sleef', required : true),
-    c.find_library('sleefquad', required : true)
-  ]
 endif
+
+sleef_dep = [
+  c.find_library('sleef', required : true),
+  c.find_library('sleefquad', required : true)
+]
 
 incdir_numpy = run_command(py,
   ['-c', 'import numpy; print(numpy.get_include())'],
