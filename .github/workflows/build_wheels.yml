@@ -29,26 +29,24 @@ jobs:
           python-version: '3.10'
           architecture: ${{ matrix.architecture }}
 
-      - name: Install Miniconda
-        uses: conda-incubator/setup-miniconda@v3
-        with:
-          auto-update-conda: true
-          python-version: '3.10'
-          architecture: ${{ matrix.architecture }}
+      - name: Install CMake
+        uses: lukka/get-cmake@latest
 
-      - name: Install SLEEF and other dependencies
-        shell: bash -l {0}
+      - name: Clone and Build SLEEF
+        shell: pwsh
         run: |
-          conda config --add channels conda-forge
-          conda config --set channel_priority strict
-          conda install -y sleef numpy
+          git clone https://github.com/shibatch/sleef.git
+          cd sleef
+          cmake -S . -B build -G "Visual Studio 17 2022" -A ${{ matrix.architecture == 'x86' && 'Win32' || 'x64' }} -DSLEEF_BUILD_QUAD:BOOL=ON -DSLEEF_BUILD_SHARED_LIBS:BOOL=ON -DCMAKE_POSITION_INDEPENDENT_CODE=ON
+          cmake --build build --config Release --parallel
+          cmake --install build --prefix "C:/sleef" --config Release
 
       - name: Setup build environment
         shell: pwsh
         run: |
-          $env:INCLUDE += ";$env:CONDA_PREFIX\Library\include"
-          $env:LIB += ";$env:CONDA_PREFIX\Library\lib"
-          $env:PATH = "$env:CONDA_PREFIX\Library\bin;$env:PATH"
+          $env:INCLUDE += ";C:\sleef\include"
+          $env:LIB += ";C:\sleef\lib"
+          $env:PATH = "C:\sleef\bin;$env:PATH"
           echo "INCLUDE=$env:INCLUDE" >> $env:GITHUB_ENV
           echo "LIB=$env:LIB" >> $env:GITHUB_ENV
           echo "PATH=$env:PATH" >> $env:GITHUB_ENV
@@ -69,7 +67,7 @@ jobs:
           MSSdk: '1'
           CIBW_BEFORE_BUILD: |
             pip install meson meson-python ninja numpy
-          CIBW_REPAIR_WHEEL_COMMAND: 'delvewheel repair -w {dest_dir} {wheel}'
+          CIBW_REPAIR_WHEEL_COMMAND: 'delvewheel repair -w {dest_dir} {wheel} --add-path C:\sleef\bin'
           CIBW_TEST_COMMAND: |
             pip install {package}[test]
             python -m pytest -v {project}/test
