@@ -4,10 +4,6 @@ on:
   push:
     branches:
       - win-sleeef
-    tags:
-      - 'quaddtype-v*'
-    paths:
-      - 'quaddtype/**'
   pull_request:
   workflow_dispatch:
 
