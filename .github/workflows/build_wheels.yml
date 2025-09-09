@@ -22,11 +22,12 @@ jobs:
     steps:
       - uses: actions/checkout@v3
 
-      - name: ccaches
+      # Setup ccache before any compilation steps
+      - name: Setup ccache
         uses: hendrikmuhs/ccache-action@v1.2
         with:
+          key: build-wheels-linux-${{ github.job }}-${{ runner.os }}
           create-symlink: true
-          key: ${{ github.job }}-ubuntu-latest
           verbose: 2
 
       - name: Set up Python
@@ -45,9 +46,31 @@ jobs:
           CIBW_BUILD_VERBOSITY: "3"
           CIBW_BEFORE_ALL: |
             yum update -y
-            yum install -y cmake gcc gcc-c++ make git pkgconfig
+            yum install -y cmake gcc gcc-c++ make git pkgconfig ccache
+            # Configure ccache for CMake
+            export PATH="/usr/lib64/ccache:/usr/lib/ccache:$PATH"
+            export CC="ccache gcc"
+            export CXX="ccache g++"
+            # Copy ccache cache from host if available
+            if [ -d /host/.ccache ]; then
+              cp -r /host/.ccache /root/.ccache || true
+              ccache -s
+            fi
           CIBW_ENVIRONMENT: >
             LDFLAGS="-fopenmp"
+            CMAKE_C_COMPILER_LAUNCHER=ccache
+            CMAKE_CXX_COMPILER_LAUNCHER=ccache
+            CCACHE_DIR=/tmp/.ccache
+            CCACHE_COMPILERCHECK=content
+            CCACHE_MAXSIZE=500M
+          # Mount ccache directory to persist across cibuildwheel container runs
+          CIBW_CONTAINER_ENGINE: docker
+          CIBW_BEFORE_BUILD: |
+            # Setup ccache inside each wheel build
+            export PATH="/usr/lib64/ccache:/usr/lib/ccache:$PATH"
+            export CC="ccache gcc" 
+            export CXX="ccache g++"
+            ccache -s || true
           CIBW_REPAIR_WHEEL_COMMAND: |
             auditwheel repair -w {dest_dir} --plat manylinux_2_28_x86_64 {wheel}
           CIBW_TEST_COMMAND: |
@@ -59,7 +82,26 @@ jobs:
             fi
           CIBW_TEST_EXTRAS: "test"
         run: |
-          python -m cibuildwheel --output-dir wheelhouse
+          # Create ccache directory and make it available to container
+          mkdir -p $HOME/.ccache
+          export CCACHE_DIR=$HOME/.ccache
+
+          # Configure ccache settings
+          ccache --set-config=max_size=500M
+          ccache --set-config=compression=true
+          ccache --set-config=compiler_check=content
+          ccache -s
+
+          # Mount ccache directory to container and run cibuildwheel
+          export CIBW_ENVIRONMENT_LINUX="CCACHE_DIR=/tmp/.ccache $CIBW_ENVIRONMENT"
+
+          # Run cibuildwheel with ccache directory mounted
+          python -m cibuildwheel --output-dir wheelhouse \
+            --config-settings="-Dcmake.define.CMAKE_C_COMPILER_LAUNCHER=ccache" \
+            --config-settings="-Dcmake.define.CMAKE_CXX_COMPILER_LAUNCHER=ccache"
+
+          # Show final ccache stats
+          ccache -s
         working-directory: ./quaddtype
 
       - uses: actions/upload-artifact@v4
