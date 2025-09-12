@@ -169,10 +169,10 @@ jobs:
             if python -c "import sys; exit(0 if hasattr(sys, '_is_gil_enabled') and not sys._is_gil_enabled() else 1)"; then
               pytest --parallel-threads=10 --iterations=10 {project}/tests
             else
+              echo "tests are running"
               pytest -s {project}/tests
             fi
           CIBW_TEST_EXTRAS: test
-          CIBW_TEST_FAIL_FAST: 1
         shell: pwsh
         run: |
           python -m cibuildwheel --output-dir wheelhouse
