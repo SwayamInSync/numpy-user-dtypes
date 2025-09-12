@@ -164,13 +164,9 @@ jobs:
             CFLAGS="/DDISABLE_QUADBLAS $CFLAGS"
             CXXFLAGS="/DDISABLE_QUADBLAS $CXXFLAGS"
           CIBW_REPAIR_WHEEL_COMMAND: 'delvewheel repair -w {dest_dir} {wheel} --add-path C:\sleef\bin'
-          CIBW_TEST_COMMAND_WINDOWS: >
-            pip install {package}[test] && python -c "
-            import sys, subprocess;
-            is_ft = hasattr(sys, '_is_gil_enabled') and not sys._is_gil_enabled();
-            cmd = ['pytest', '--parallel-threads=10', '--iterations=10', '{project}/tests'] if is_ft else ['pytest', '-s', '{project}/tests'];
-            subprocess.run(cmd, check=True, shell=True)
-            "
+          CIBW_TEST_COMMAND_WINDOWS: |
+            pip install {package}[test]
+            pytest -s {project}/tests
           CIBW_TEST_EXTRAS: test
         shell: pwsh
         run: |
