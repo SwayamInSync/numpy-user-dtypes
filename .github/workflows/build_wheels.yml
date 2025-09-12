@@ -164,9 +164,7 @@ jobs:
             CFLAGS="/DDISABLE_QUADBLAS $CFLAGS"
             CXXFLAGS="/DDISABLE_QUADBLAS $CXXFLAGS"
           CIBW_REPAIR_WHEEL_COMMAND: 'delvewheel repair -w {dest_dir} {wheel} --add-path C:\sleef\bin'
-          CIBW_TEST_COMMAND_WINDOWS: |
-            pip install {package}[test]
-            pytest -s {project}/tests
+          CIBW_TEST_COMMAND_WINDOWS: pip install {package}[test] && pytest -s {project}/tests
           CIBW_TEST_EXTRAS: test
         shell: pwsh
         run: |
