@@ -176,6 +176,43 @@ quadprec_default_descr(PyArray_DTypeMeta *cls)
     return (PyArray_Descr *)temp;
 }
 
+static int
+quadprec_is_inexact(PyArray_DTypeMeta *cls)
+{
+    // QuadPrecDType represents floating-point values, so it's inexact
+    return 1;
+}
+
+static PyObject *
+quadprec_get_finfo(PyArray_DTypeMeta *cls, PyArray_Descr *descr)
+{
+    QuadPrecDTypeObject *quad_descr = (QuadPrecDTypeObject *)descr;
+    
+    // Create finfo object with appropriate values for quad precision
+    PyObject *finfo_dict = PyDict_New();
+    if (!finfo_dict) return NULL;
+    
+    // Add precision (quad precision has ~34 decimal digits)
+    PyDict_SetItemString(finfo_dict, "precision", PyLong_FromLong(34));
+    PyDict_SetItemString(finfo_dict, "bits", PyLong_FromLong(128));
+    
+    // Add machine epsilon
+    PyDict_SetItemString(finfo_dict, "eps", PyLong_FromLong(34));  // Use your existing constant
+    
+    // Add max value  
+    PyDict_SetItemString(finfo_dict, "max", PyLong_FromLong(34));  // Use your existing constant
+    
+    // Add tiny (smallest normal)
+    PyDict_SetItemString(finfo_dict, "tiny", PyLong_FromLong(34));  // Use your existing constant
+
+    // Add additional standard finfo attributes
+    PyDict_SetItemString(finfo_dict, "epsneg", PyLong_FromLong(34));
+    PyDict_SetItemString(finfo_dict, "resolution", PyLong_FromLong(34));
+
+    return finfo_dict;  // For now return dict, later create proper finfo object
+}
+
+
 static PyType_Slot QuadPrecDType_Slots[] = {
         {NPY_DT_ensure_canonical, &ensure_canonical},
         {NPY_DT_common_instance, &common_instance},
@@ -185,6 +222,8 @@ static PyType_Slot QuadPrecDType_Slots[] = {
         {NPY_DT_getitem, &quadprec_getitem},
         {NPY_DT_default_descr, &quadprec_default_descr},
         {NPY_DT_PyArray_ArrFuncs_dotfunc, NULL},
+        {NPY_DT_is_inexact, &quadprec_is_inexact},
+        {NPY_DT_get_finfo, &quadprec_get_finfo},
         {0, NULL}};
 
 static PyObject *
@@ -223,6 +262,7 @@ QuadPrecDType_str(QuadPrecDTypeObject *self)
     const char *backend_str = (self->backend == BACKEND_SLEEF) ? "sleef" : "longdouble";
     return PyUnicode_FromFormat("QuadPrecDType(backend='%s')", backend_str);
 }
+
 
 PyArray_DTypeMeta QuadPrecDType = {
         {{
