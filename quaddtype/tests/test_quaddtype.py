@@ -435,6 +435,16 @@ class TestBytesSupport:
         assert from_string == from_bytes
         assert from_string == from_bytes_utf8
 
+    @pytest.mark.parametrize("size", [
+        200, 500, 1000, 5000, 10000
+    ])
+    def test_large_arrays(self, size):
+        """Test creating large arrays from bytes representations."""
+        arr = np.arange(size, dtype=QuadPrecDType())
+        bytes_arr = arr.astype('S50')
+        quad_arr = bytes_arr.astype(QuadPrecDType())
+        np.testing.assert_array_equal(arr, quad_arr)
+        
 
 def test_string_subclass_parsing():
     """Test that QuadPrecision handles string subclasses correctly.
