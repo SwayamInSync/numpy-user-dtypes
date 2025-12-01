@@ -388,6 +388,104 @@ quadprec_fromstr(char *s, void *dptr, char **endptr, PyArray_Descr *descr_generi
     return 0;
 }
 
+/*
+ * Nonzero function for QuadPrecDType.
+ * Returns true (1) if the value is nonzero, false (0) otherwise.
+ * This is required for np.nonzero() and np.place() to work.
+ */
+static npy_bool
+quadprec_nonzero(void *data, void *arr)
+{
+    PyArrayObject *arr_obj = (PyArrayObject *)arr;
+    QuadPrecDTypeObject *descr = (QuadPrecDTypeObject *)PyArray_DESCR(arr_obj);
+    
+    if (descr->backend == BACKEND_SLEEF) {
+        Sleef_quad val;
+        memcpy(&val, data, sizeof(Sleef_quad));
+        // Check if value is nonzero (not equal to 0.0)
+        Sleef_quad zero = Sleef_cast_from_doubleq1(0.0);
+        // Use comparison: returns 1 if not equal
+        return Sleef_icmpneq1(val, zero) ? 1 : 0;
+    }
+    else {
+        long double val;
+        memcpy(&val, data, sizeof(long double));
+        return val != 0.0L ? 1 : 0;
+    }
+}
+
+/*
+ * Copyswap function for QuadPrecDType.
+ * Copies data from src to dst, optionally byte-swapping.
+ * This is required for np.place() and other array operations.
+ */
+static void
+quadprec_copyswap(void *dst, void *src, int swap, void *arr)
+{
+    PyArrayObject *arr_obj = (PyArrayObject *)arr;
+    QuadPrecDTypeObject *descr = (QuadPrecDTypeObject *)PyArray_DESCR(arr_obj);
+    size_t elem_size = (descr->backend == BACKEND_SLEEF) ? sizeof(Sleef_quad) : sizeof(long double);
+    
+    if (src != NULL) {
+        memcpy(dst, src, elem_size);
+    }
+    
+    if (swap) {
+        // Byte swap the value in place
+        char *a = (char *)dst;
+        char *b = a + elem_size - 1;
+        char tmp;
+        while (a < b) {
+            tmp = *a;
+            *a++ = *b;
+            *b-- = tmp;
+        }
+    }
+}
+
+/*
+ * Copyswapn function for QuadPrecDType.
+ * Copies n elements from src to dst with given strides, optionally byte-swapping.
+ */
+static void
+quadprec_copyswapn(void *dst, npy_intp dstride, void *src, npy_intp sstride,
+                   npy_intp n, int swap, void *arr)
+{
+    PyArrayObject *arr_obj = (PyArrayObject *)arr;
+    QuadPrecDTypeObject *descr = (QuadPrecDTypeObject *)PyArray_DESCR(arr_obj);
+    size_t elem_size = (descr->backend == BACKEND_SLEEF) ? sizeof(Sleef_quad) : sizeof(long double);
+    
+    char *dst_ptr = (char *)dst;
+    char *src_ptr = (char *)src;
+    
+    if (src != NULL) {
+        for (npy_intp i = 0; i < n; i++) {
+            memcpy(dst_ptr, src_ptr, elem_size);
+            dst_ptr += dstride;
+            src_ptr += sstride;
+        }
+    }
+    
+    if (swap) {
+        dst_ptr = (char *)dst;
+        for (npy_intp i = 0; i < n; i++) {
+            char *a = dst_ptr;
+            char *b = a + elem_size - 1;
+            char tmp;
+            while (a < b) {
+                tmp = *a;
+                *a++ = *b;
+                *b-- = tmp;
+            }
+            dst_ptr += dstride;
+        }
+    }
+}
+
+/* Define slot numbers for copyswap which are not in the public API */
+#define NPY_DT_PyArray_ArrFuncs_copyswapn (3 + (1 << 11))
+#define NPY_DT_PyArray_ArrFuncs_copyswap (4 + (1 << 11))
+
 static PyType_Slot QuadPrecDType_Slots[] = {
         {NPY_DT_ensure_canonical, &ensure_canonical},
         {NPY_DT_common_instance, &common_instance},
@@ -400,8 +498,10 @@ static PyType_Slot QuadPrecDType_Slots[] = {
         {NPY_DT_PyArray_ArrFuncs_fill, &quadprec_fill},
         {NPY_DT_PyArray_ArrFuncs_scanfunc, &quadprec_scanfunc},
         {NPY_DT_PyArray_ArrFuncs_fromstr, &quadprec_fromstr},
+        {NPY_DT_PyArray_ArrFuncs_nonzero, &quadprec_nonzero},
+        {NPY_DT_PyArray_ArrFuncs_copyswap, &quadprec_copyswap},
+        {NPY_DT_PyArray_ArrFuncs_copyswapn, &quadprec_copyswapn},
         {0, NULL}};
-
 static PyObject *
 QuadPrecDType_new(PyTypeObject *NPY_UNUSED(cls), PyObject *args, PyObject *kwds)
 {
