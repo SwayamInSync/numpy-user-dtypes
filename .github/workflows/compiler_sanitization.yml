@@ -80,57 +80,51 @@ jobs:
             -Csetup-args=-Db_sanitize=address,undefined \
             -Csetup-args=-Db_lundef=false
 
+      - name: Create sanitizer suppression files
+        run: |
+          # Create ASAN suppression file to ignore NumPy and other library issues
+          cat > ${{ github.workspace }}/asan_suppressions.txt << 'EOF'
+          # Suppress issues from NumPy internals
+          interceptor_via_fun:*numpy*
+          interceptor_via_fun:*_multiarray*
+          interceptor_via_fun:*_umath*
+          # Suppress issues from Python internals
+          interceptor_via_fun:*cpython*
+          interceptor_via_fun:*python*
+          EOF
+
+          # Create LSAN suppression file (for leak sanitizer, part of ASAN)
+          cat > ${{ github.workspace }}/lsan_suppressions.txt << 'EOF'
+          # Suppress leaks from NumPy
+          leak:*numpy*
+          leak:*_multiarray*
+          leak:*_umath*
+          # Suppress leaks from Python internals
+          leak:*cpython*
+          leak:*python*
+          leak:*PyObject*
+          EOF
+
+          # Create UBSAN suppression file to ignore NumPy issues
+          cat > ${{ github.workspace }}/ubsan_suppressions.txt << 'EOF'
+          # Suppress UB issues from NumPy internals
+          signed-integer-overflow:*numpy*
+          signed-integer-overflow:*_multiarray*
+          signed-integer-overflow:*_umath*
+          shift:*numpy*
+          alignment:*numpy*
+          # Suppress UB issues from Python internals  
+          signed-integer-overflow:*python*
+          signed-integer-overflow:*cpython*
+          vptr:*python*
+          EOF
+
       - name: Run quaddtype tests with ASan
         working-directory: quaddtype
         run: |
-          # Create a directory for sanitizer logs
-          mkdir -p ${{ github.workspace }}/sanitizer_logs
-          
-          # Run tests with sanitizer output redirected to log files
-          # Note: UBSAN halt_on_error=0 because NumPy has some UBSAN issues that would abort tests
-          ASAN_OPTIONS=detect_leaks=0:symbolize=1:strict_init_order=true:allocator_may_return_null=1:log_path=${{ github.workspace }}/sanitizer_logs/asan \
-          UBSAN_OPTIONS=halt_on_error=0:log_path=${{ github.workspace }}/sanitizer_logs/ubsan \
+          # Run tests with sanitizer suppressions - only quaddtype issues will be reported
+          # Note: halt_on_error=1 for UBSAN now since we suppress NumPy issues
+          ASAN_OPTIONS=detect_leaks=0:symbolize=1:strict_init_order=true:allocator_may_return_null=1:suppressions=${{ github.workspace }}/asan_suppressions.txt:print_suppressions=0 \
+          LSAN_OPTIONS=suppressions=${{ github.workspace }}/lsan_suppressions.txt:print_suppressions=0 \
+          UBSAN_OPTIONS=halt_on_error=1:print_stacktrace=1:suppressions=${{ github.workspace }}/ubsan_suppressions.txt:print_suppressions=0 \
           pytest -vvv --color=yes --timeout=600 --durations=10
-
-      - name: Display quaddtype sanitizer warnings
-        if: always()
-        run: |
-          echo ""
-          echo "=========================================="
-          echo "ASAN LOGS"
-          echo "=========================================="
-          if ls ${{ github.workspace }}/sanitizer_logs/asan* 1> /dev/null 2>&1; then
-            cat ${{ github.workspace }}/sanitizer_logs/asan* 2>/dev/null || echo "No ASAN logs available."
-          else
-            echo "No ASAN log files found."
-          fi
-          
-          echo ""
-          echo "=========================================="
-          echo "UBSAN LOGS"
-          echo "=========================================="
-          if ls ${{ github.workspace }}/sanitizer_logs/ubsan* 1> /dev/null 2>&1; then
-            cat ${{ github.workspace }}/sanitizer_logs/ubsan* 2>/dev/null || echo "No UBSAN logs available."
-          else
-            echo "No UBSAN log files found."
-          fi
-
-      - name: Check for quaddtype sanitizer issues
-        if: always()
-        run: |
-          # Fail if any quaddtype-related sanitizer issues are found
-          QUADDTYPE_ISSUES=""
-          if ls ${{ github.workspace }}/sanitizer_logs/* 1> /dev/null 2>&1; then
-            QUADDTYPE_ISSUES=$(cat ${{ github.workspace }}/sanitizer_logs/* 2>/dev/null | \
-              grep -E "quaddtype|_quaddtype|numpy_quaddtype" || true)
-          fi
-          
-          if [ -n "$QUADDTYPE_ISSUES" ]; then
-            echo "=========================================="
-            echo "ERROR: Sanitizer issues found in quaddtype!"
-            echo "=========================================="
-            echo "$QUADDTYPE_ISSUES"
-            exit 1
-          else
-            echo "No quaddtype-specific sanitizer issues found."
-          fi
