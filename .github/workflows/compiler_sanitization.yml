@@ -82,50 +82,19 @@ jobs:
 
       - name: Create sanitizer suppression files
         run: |
-          # Create ASAN suppression file for external libraries
-          # Format: interceptor_via_lib:LibraryName or interceptor_via_fun:FunctionName
-          # This suppresses issues in external libraries (not recompiled with ASan instrumentation)
-          cat > ${{ github.workspace }}/asan_suppressions.txt << 'EOF'
-          interceptor_via_lib:libpython
-          interceptor_via_lib:_multiarray_umath
-          interceptor_via_lib:numpy
-          EOF
-          sed -i '' 's/^[[:space:]]*//' ${{ github.workspace }}/asan_suppressions.txt
-
-          # Create LSAN suppression file (for leak sanitizer, part of ASAN)
-          cat > ${{ github.workspace }}/lsan_suppressions.txt << 'EOF'
-          leak:*numpy*
-          leak:*_multiarray*
-          leak:*_umath*
-          leak:*cpython*
-          leak:*python*
-          leak:*PyObject*
-          EOF
-          sed -i '' 's/^[[:space:]]*//' ${{ github.workspace }}/lsan_suppressions.txt
-
-          # Create UBSAN suppression file to ignore NumPy issues
-          # Format: <check-type>:<file-or-function-pattern>
+          # Create UBSAN suppression file - suppress everything from numpy
+          # src:*numpy* matches any source file path containing "numpy"
           cat > ${{ github.workspace }}/ubsan_suppressions.txt << 'EOF'
-          signed-integer-overflow:*numpy*
-          signed-integer-overflow:*_multiarray*
-          signed-integer-overflow:*_umath*
-          shift-base:*numpy*
-          shift-exponent:*numpy*
-          alignment:*numpy*
-          signed-integer-overflow:*python*
-          signed-integer-overflow:*cpython*
-          vptr:*python*
+          src:*numpy*
           EOF
           sed -i '' 's/^[[:space:]]*//' ${{ github.workspace }}/ubsan_suppressions.txt
 
       - name: Run quaddtype tests with ASan
         working-directory: quaddtype
         run: |
-          # Run tests with sanitizer suppressions - only quaddtype issues will be reported
-          # - ASAN: Suppress issues from NumPy/Python external libraries
-          # - LSAN: Suppress leaks from NumPy/Python internals (disabled via detect_leaks=0)
-          # - UBSAN: Suppress UB issues from NumPy/Python, halt on quaddtype issues
-          ASAN_OPTIONS=detect_leaks=0:symbolize=1:strict_init_order=true:allocator_may_return_null=1:suppressions=${{ github.workspace }}/asan_suppressions.txt:print_suppressions=0 \
-          LSAN_OPTIONS=suppressions=${{ github.workspace }}/lsan_suppressions.txt:print_suppressions=0 \
+          # Run tests with sanitizers - only quaddtype issues will be reported
+          # - ASAN: Basic options, leak detection disabled
+          # - UBSAN: Suppress issues from numpy sources, halt on quaddtype issues
+          ASAN_OPTIONS=detect_leaks=0:symbolize=1:strict_init_order=true:allocator_may_return_null=1 \
           UBSAN_OPTIONS=halt_on_error=1:print_stacktrace=1:suppressions=${{ github.workspace }}/ubsan_suppressions.txt:print_suppressions=0 \
           pytest -vvv --color=yes --timeout=600 --durations=10
