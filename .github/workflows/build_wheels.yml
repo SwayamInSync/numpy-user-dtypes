@@ -39,14 +39,14 @@ jobs:
           CIBW_BEFORE_ALL: |
             yum update -y
             yum install -y cmake gcc gcc-c++ make git pkgconfig
-            
+
             # Build and install SLEEF with quad-precision support system-wide
             git clone https://github.com/shibatch/sleef.git /tmp/sleef
             cd /tmp/sleef
             git checkout 43a0252ba9331adc7fb10755021f802863678c38
             cmake -DSLEEF_BUILD_QUAD=ON -DCMAKE_INSTALL_PREFIX=/usr/local -S . -B build
-            cmake --build build -j
-            cmake --install build
+            sudo cmake --build build -j
+            sudo cmake --install build
             ldconfig
             cd /
             rm -rf /tmp/sleef
@@ -110,7 +110,7 @@ jobs:
           cd /tmp/sleef
           git checkout 43a0252ba9331adc7fb10755021f802863678c38
           cmake -DSLEEF_BUILD_QUAD=ON -DCMAKE_INSTALL_PREFIX=/usr/local -S . -B build
-          cmake --build build -j
+          sudo cmake --build build -j
           sudo cmake --install build
           cd /
           rm -rf /tmp/sleef
