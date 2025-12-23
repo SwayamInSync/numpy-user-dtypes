@@ -44,9 +44,9 @@ jobs:
             git clone https://github.com/shibatch/sleef.git /tmp/sleef
             cd /tmp/sleef
             git checkout 43a0252ba9331adc7fb10755021f802863678c38
-            cmake -DSLEEF_BUILD_QUAD=ON -DCMAKE_INSTALL_PREFIX=/usr/local -S . -B build
-            sudo cmake --build build -j
-            sudo cmake --install build
+            cmake -DSLEEF_BUILD_QUAD=ON -DCMAKE_INSTALL_PREFIX=/usr/local -DBUILD_SHARED_LIBS=ON -DSLEEF_ENABLE_SSE2=ON -S . -B build
+            cmake --build build -j
+            cmake --install build
             ldconfig
             cd /
           CIBW_BEFORE_BUILD: |
@@ -108,7 +108,12 @@ jobs:
           git clone https://github.com/shibatch/sleef.git /tmp/sleef
           cd /tmp/sleef
           git checkout 43a0252ba9331adc7fb10755021f802863678c38
-          cmake -DSLEEF_BUILD_QUAD=ON -DCMAKE_INSTALL_PREFIX=/usr/local -S . -B build
+          # Enable SSE2 for x86_64 architecture
+          SLEEF_SIMD_FLAGS=""
+          if [ "$(uname -m)" = "x86_64" ]; then
+            SLEEF_SIMD_FLAGS="-DSLEEF_ENABLE_SSE2=ON"
+          fi
+          cmake -DSLEEF_BUILD_QUAD=ON -DCMAKE_INSTALL_PREFIX=/usr/local -DBUILD_SHARED_LIBS=ON $SLEEF_SIMD_FLAGS -S . -B build
           sudo cmake --build build -j
           sudo cmake --install build
           cd /
@@ -134,7 +139,7 @@ jobs:
             PKG_CONFIG_PATH="/usr/local/lib/pkgconfig:$PKG_CONFIG_PATH"
             DYLD_LIBRARY_PATH="/usr/local/lib:$DYLD_LIBRARY_PATH"
           CIBW_REPAIR_WHEEL_COMMAND: >
-            delocate-wheel --require-archs {delocate_archs} -w {dest_dir} -v {wheel}
+            DYLD_LIBRARY_PATH=/usr/local/lib delocate-wheel --require-archs {delocate_archs} -w {dest_dir} -v {wheel} --dylibs-only
           CIBW_TEST_COMMAND: |
             pip install --pre --upgrade --extra-index-url https://pypi.anaconda.org/scientific-python-nightly-wheels/simple numpy
             pip install --no-deps {wheel}
