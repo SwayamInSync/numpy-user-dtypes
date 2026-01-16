@@ -86,6 +86,8 @@ jobs:
         with:
           name: docs-html
           path: './docs-html'
+      - name: Add .nojekyll file
+        run: touch ./docs-html/.nojekyll
       - name: Deploy PR Preview
         uses: rossjrw/pr-preview-action@v1
         with:
